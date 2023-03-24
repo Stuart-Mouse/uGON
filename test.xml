@@ -1,0 +1,25 @@
+<object>
+  <name>asdf</name>
+  <number>35.35</number> 
+  <string>this is a string</string>
+  <object>
+    <name>asdf</name>
+    <number>35.35</number> 
+    <string>this is a string</string>
+    <object>
+      <name>asdf</name>
+      <number>35.35</number> 
+      <string>this is a string</string>
+      <object>
+        <name>asdf</name>
+        <number>35.35</number> 
+        <string>this is a string</string>
+        <object>
+          <name>asdf</name>
+          <number>35.35</number> 
+          <string>this is a string</string>
+        </object>
+      </object>
+    </object>
+  </object>
+</object>

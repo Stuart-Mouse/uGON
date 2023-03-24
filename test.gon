@@ -1,0 +1,25 @@
+object {
+  name asdf
+  number 35.35
+  string "this is a string"
+    object {
+    name asdf
+    number 35.35
+    string "this is a string"
+    object {
+      name asdf
+      number 35.35
+      string "this is a string"
+      object {
+        name asdf
+        number 35.35
+        string "this is a string"
+        object {
+          name asdf
+          number 35.35
+          string "this is a string"
+        }
+      }
+    }
+  }
+}
