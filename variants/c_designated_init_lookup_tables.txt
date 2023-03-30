@@ -1,0 +1,19 @@
+In the main version of the parser being put on GitHub, I wanted it to be compatible with both C and C++
+Since C++ does not support designated initializers on arrays, I had to format the lookup tables as impossible-to-read lists of ones and zeros 
+
+// Lookup table for whitespace characters
+const int gon_lookup_whitespace[128] = {
+	[' ' ] = 1,	['\t'] = 1,
+	['\n'] = 1,	['\r'] = 1,
+	[',' ] = 1,
+};
+
+// Lookup table for text characters
+// (basically whitespace, brackets/braces, and null)
+const int gon_lookup_non_text[128] = {
+	['\0'] = 1, [' ' ] = 1,
+	['\t'] = 1,	['\n'] = 1,
+	['\r'] = 1,	[',' ] = 1,
+	['{' ] = 1,	['}' ] = 1,
+	['[' ] = 1,	[']' ] = 1,
+};

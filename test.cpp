@@ -54,8 +54,6 @@ void gon_test(void) {
 	puts(buf);
 
 	gon_free(&gon);
-
-	printf("sizeof(GonField): %u\n\n", sizeof(GonField));
 }
 
 double time_strlen(const char* buffer, size_t size, int reps) {
@@ -148,6 +146,8 @@ double time_rapidxml(char* buffer, size_t size, int reps) {
 
 
 void speed_test(void) {
+	printf("sizeof(GonField): %u\n\n", sizeof(GonField));
+
 	int reps = 1000000;
 	int len = 0;
 
@@ -159,7 +159,7 @@ void speed_test(void) {
 
 	double strlen_sum_time = time_strlen(buffer, size, reps);
 
-	double gon_sum_time = time_gon("test.gon", reps);
+	//double gon_sum_time = time_gon("test.gon", reps);
 
 	double ugon_sum_time = time_ugon(buffer, size, reps);
 	free(buffer);
@@ -172,11 +172,11 @@ void speed_test(void) {
 
 	printf("ugon time / strlen time: %f\n", ugon_sum_time / strlen_sum_time);
 	printf("ugon time / rapidxml time: %f\n", ugon_sum_time / rapidxml_sum_time);
-	printf("ugon time / gon time: %f\n\n", ugon_sum_time / gon_sum_time);
+	//printf("ugon time / gon time: %f\n\n", ugon_sum_time / gon_sum_time);
 
-	printf("ugon time / gon len: %f\n", ugon_sum_time / (double)(gon_len * reps));
-	printf("xml time / xml len: %f\n", rapidxml_sum_time / (double)(xml_len * reps));
-	printf("gon time / gon len: %f\n\n", gon_sum_time / (double)(gon_len * reps));
+	printf("ugon time / gon len: %f\n", (ugon_sum_time / (double)reps) / (double)gon_len);
+	printf("xml time / xml len: %f\n", (rapidxml_sum_time / (double)reps) / (double)xml_len);
+	//printf("gon time / gon len: %f\n\n", gon_sum_time / (double)(gon_len * reps));
 
 	printf("gon_len: %i\n", gon_len);
 	printf("xml_len: %i\n", xml_len);
@@ -184,7 +184,7 @@ void speed_test(void) {
 
 int main(void) {
 
-	gon_test();
+	//gon_test();
 	speed_test();
 
 	return 0;

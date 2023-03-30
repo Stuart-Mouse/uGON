@@ -13,7 +13,6 @@
 #define GON_FIELD_BUFFER_SIZE 32
 #endif
 
-#define GON_MAX_DEPTH 255
 #define GON_TAB_WIDTH 2
 
 // Lookup table for whitespace characters
@@ -39,13 +38,13 @@ const int gon_lookup_non_text[256] = {
 // Defines a single field in the gon file
 typedef struct GonField {
 	char* name;
-	unsigned short type;
-	unsigned short flags;
+	unsigned int type;
+	unsigned int flags;
 	union {				// saves ~8 bytes probably
 		char* value;	// value only needed by fields
 		struct {		// size and count only needed by objects/arrays
-			unsigned short size;
-			unsigned short count;
+			unsigned int size;	// used to store parent index until stepping out of object
+			unsigned int count;
 		};
 	};
 } GonField;
@@ -60,6 +59,7 @@ typedef struct GonFile {
 	#endif
 	char* file;
 	size_t file_length;
+	int max_depth;
 } GonFile;
 
 // Loads a text file into the GonFile struct
@@ -79,11 +79,10 @@ int gon_parse(GonFile* gon) {
 	gon->fields[0].type = GON_VALUE_TYPE_OBJECT;
 
 	unsigned int field_index = 1;
+	unsigned int parent_index = 0;
 	unsigned int depth = 0;
-	unsigned int parent_index[GON_MAX_DEPTH];
 	bool in_array = 0;
 
-	parent_index[0] = 0;
 	// need to store an index so that we can defer null-ing it until we know what comes after
 	// init'd to last so that we only overwrite existing null if none has been set yet.
 	char* null_pos = last;
@@ -99,7 +98,7 @@ int gon_parse(GonFile* gon) {
 
 		// Break at EOF
 		if (index >= last) {
-			if (parent_index[depth]) {
+			if (parent_index != 0) {
 				puts("GON parse error: unexpected EOF.");
 				return 1;
 			}
@@ -108,21 +107,23 @@ int gon_parse(GonFile* gon) {
 
 		// Check if object ends
 		if (*index == '}' || *index == ']') {
-			if (depth == 0) {
+			if (parent_index == 0) {
 				printf("GON parse error: encountered unexpected token %c at field %i.\n", *index, field_index);
 				return 1;
 			}
-			gon->fields[parent_index[depth]].size = field_index - parent_index[depth] - 1;
-			depth--;
-			in_array = (gon->fields[parent_index[depth]].type == GON_VALUE_TYPE_ARRAY); // in_array = true if new parent is array type
+			int grandparent_index = gon->fields[parent_index].size;	// get previous parent index out of parent object size
+			gon->fields[parent_index].size = field_index - parent_index - 1;
+			parent_index = grandparent_index;
+			in_array = (gon->fields[parent_index].type == GON_VALUE_TYPE_ARRAY); // in_array = true if new parent is array type
 			*null_pos = 0; // places null after previous field value
 			index++; // step over } or ]
+			depth--;
 			continue;
 		}
 
 		*null_pos = 0; // places null after previous field value
-		gon->fields[parent_index[depth]].count++;
-		gon->fields[parent_index[depth]].flags = 0;
+		gon->fields[parent_index].count++;
+		gon->fields[field_index].flags = 0;
 		// Get field / object name
 		if (!in_array) {
 			gon->fields[field_index].name = index;
@@ -210,13 +211,10 @@ int gon_parse(GonFile* gon) {
 
 		*null_pos = 0; // can safely place null after name after reading in '{'
 		index++; // step over { or [
-		depth++;
-		if (depth >= GON_MAX_DEPTH) {
-			printf("GON parse error: exceeded maximum object depth at field %i\n", field_index);
-			return 1;
-		}
-		parent_index[depth] = field_index;
+		gon->fields[field_index].size = parent_index; // store parent index in object size until stepping out of object
+		parent_index = field_index;
 		field_index++;
+		if (++depth > gon->max_depth) gon->max_depth = depth; // track max object depth so we have this information for serialization
 	}
 
 	// Set root object size
@@ -240,7 +238,7 @@ int gon_parse(GonFile* gon) {
 void gon_serialize(GonFile* gon, char* dst) {
 	unsigned int field_index = 1;
 	unsigned int depth = 0;
-	unsigned int parent_index[GON_MAX_DEPTH];
+	unsigned int *parent_index = (unsigned int*)_malloca((gon->max_depth + 1) * sizeof(unsigned int));
 	unsigned int indent = 0;
 	bool in_array = 0;
 	parent_index[0] = 0;
@@ -302,6 +300,8 @@ void gon_serialize(GonFile* gon, char* dst) {
 	}
 
 	*dst = '\0'; // write null to end of file
+
+	_freea(parent_index);
 }
 
 // Gets the first child field with the given name if it exists, otherwise returns NULL
